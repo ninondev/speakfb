@@ -1,0 +1,8 @@
+/speakfb
+__pycache__/
+.DS_Store
+*.aiff
+*.wav
+/inbox/
+/reports/
+/progress.tsv
