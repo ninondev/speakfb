@@ -12,12 +12,12 @@ It does not score pronunciation. The report below is real output for an 11-secon
 ## What it measures
 
 - Words per minute: words without fillers, from the first word to the last word. Pauses in this time are included.
-- Pace: below 100 words per minute is slow, 100 to 160 is steady, and above 160 is fast. This is a simple guide.
+- Pace: below 100 words per minute is slow, 100 to 160 is steady, and above 160 is fast. These bands are only a rough guide.
 - Pauses: gaps between words longer than 1 second. The report shows the five longest gaps.
 - Fillers: `um`, `uh`, `er`, `ah`, `erm`, `hmm`, and `mm`.
-- Low-confidence words: the system's confidence is below 0.5 and at least 0. Words must have at least three letters. Common words such as `the` and `and` are left out. The report shows up to 12 words.
+- Low-confidence words: words the system rates below 0.5 confidence. Words with no confidence value, words shorter than three letters, and common words such as `the` and `and` are left out. The report shows up to 12 words.
 
-Confidence shows how sure the system is. It is not a pronunciation score.
+Confidence shows how sure the speech system is about a word. It does not measure pronunciation.
 
 ## Requirements
 
