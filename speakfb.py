@@ -61,30 +61,54 @@ def mmss(t):
 
 def report(src, a):
     name = os.path.basename(src)
-    pace = ("Fast: leave time to breathe" if a["wpm"] > 160 else "Steady pace" if a["wpm"] >= 100 else "Slow: try shorter pauses")
-    low = "".join("<li><b>%s</b> <span>%s, confidence %.2f</span></li>" % (html.escape(bare(r[3])), mmss(r[0]), r[2]) for r in a["low"][:12]) or "<li>None</li>"
-    pauses = "".join("<li>At %s: %.1f seconds</li>" % (mmss(t), g) for g, t in a["pauses"][:5]) or "<li>No pauses longer than 1 second</li>"
+    wpm = a["wpm"]
+    zone = "fast" if wpm > 160 else "steady" if wpm >= 100 else "slow"
+    pace = ("Fast: leave time to breathe" if zone == "fast" else "Steady pace" if zone == "steady" else "Slow: try shorter pauses")
+    mark = min(max((wpm - 60) / 160 * 100, 0.5), 99.5)  # scale runs 60 to 220 words per minute
+    low = "".join("<li><b>%s</b> <span>%s, confidence %.2f</span></li>" % (html.escape(bare(r[3])), mmss(r[0]), r[2]) for r in a["low"][:12])
+    low = "<ul>%s</ul>" % low if low else '<p class="none">None</p>'
+    pauses = "".join("<li>At %s: %.1f seconds</li>" % (mmss(t), g) for g, t in a["pauses"][:5])
+    pauses = "<ul>%s</ul>" % pauses if pauses else '<p class="none">No pauses longer than 1 second</p>'
+    text = " ".join(re.sub(r"^(\W*)(.*?)(\W*)$", lambda m: html.escape(m[1]) + "<mark>" + html.escape(m[2]) + "</mark>" + html.escape(m[3]), w)
+                    if bare(w) in FILLERS else html.escape(w) for w in a["text"].split(" "))
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Speech feedback {html.escape(name)}</title><style>
-:root{{--bg:#F6F7F5;--card:#fff;--ink:#1B211D;--muted:#5D6760;--accent:#1F6F66;--line:#DCE1DC}}
-@media (prefers-color-scheme:dark){{:root{{--bg:#111513;--card:#181E1B;--ink:#E4EAE6;--muted:#9AA69F;--accent:#5CC3B2;--line:#27302B}}}}
+:root{{--bg:#F6F7F5;--card:#fff;--ink:#1B211D;--muted:#5D6760;--accent:#1F6F66;--soft:#DCEBE7;--line:#DCE1DC;color-scheme:light dark}}
+@media (prefers-color-scheme:dark){{:root{{--bg:#111513;--card:#181E1B;--ink:#E4EAE6;--muted:#9AA69F;--accent:#5CC3B2;--soft:#1E3A35;--line:#27302B}}}}
 body{{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 -apple-system,system-ui,sans-serif}}
-main{{max-width:40rem;margin:0 auto;padding:28px 16px 64px}} h1{{font-size:1.2rem;margin:0 0 4px}} .sub{{color:var(--muted);font-size:.9rem;margin:0 0 20px}}
-.nums{{display:grid;grid-template-columns:repeat(auto-fit,minmax(6.5rem,1fr));gap:10px;margin-bottom:22px}}
-.n{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}} .n b{{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums}} .n span{{color:var(--muted);font-size:.85rem}}
-h2{{font-size:1rem;margin:22px 0 8px}} ul{{margin:0;padding-left:1.2em}} li span{{color:var(--muted);font-size:.9rem}}
-.t{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;line-height:1.7}}
+::selection{{background:var(--soft);color:var(--ink)}}
+main{{max-width:40rem;margin:0 auto;padding:32px 16px 64px}} h1{{font-size:1.2rem;margin:0 0 2px}} .sub{{color:var(--muted);font-size:.9rem;margin:0 0 20px}}
+.pace{{margin:28px 0 30px}} .wpm{{margin:0;font-size:1rem;color:var(--muted)}}
+.wpm b{{font-size:3.4rem;line-height:1;color:var(--ink);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-right:8px}}
+.verdict{{margin:6px 0 16px;font-size:1.15rem;font-weight:600;color:var(--accent)}}
+.zones{{position:relative;display:grid;grid-template-columns:25% 37.5% 37.5%;height:10px;border-radius:5px;overflow:visible}}
+.zones i{{background:var(--line)}} .zones i:first-child{{border-radius:5px 0 0 5px}} .zones i:nth-child(3){{border-radius:0 5px 5px 0}}
+.zones i.on{{background:var(--accent)}}
+.zones .mk{{position:absolute;top:-6px;width:4px;height:22px;margin-left:-2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--bg)}}
+.ticks{{position:relative;height:1.4em;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:6px}}
+.ticks span{{position:absolute;transform:translateX(-50%)}} .ticks .z{{transform:none}}
+.pace .sub{{margin:10px 0 0}}
+.nums{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 20px;margin:0 0 8px}}
+.nums div{{display:flex;flex-direction:column-reverse;justify-content:flex-end;border-top:2px solid var(--ink);padding-top:8px}}
+.nums dd{{margin:0;font-size:1.5rem;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}} .nums dt{{color:var(--muted);font-size:.85rem;line-height:1.35;margin-top:4px}}
+h2{{font-size:1rem;margin:32px 0 8px}} ul{{margin:0;padding-left:1.2em}} li+li{{margin-top:2px}} li span{{color:var(--muted);font-size:.9rem}}
+.none{{margin:0;color:var(--muted)}}
+.t{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;line-height:1.75}}
+mark{{background:var(--soft);color:var(--ink);border-radius:3px;padding:0 3px}}
+@media (max-width:520px){{.nums{{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px}} .wpm b{{font-size:2.8rem}}}}
 </style></head><body><main>
 <h1>{html.escape(name)}</h1><p class="sub">{datetime.datetime.now():%Y-%m-%d %H:%M} · Transcribed on this Mac</p>
-<div class="nums"><div class="n"><b>{a['span']:.0f} s</b><span>First word to last word</span></div>
-<div class="n"><b>{a['words']}</b><span>English words</span></div>
-<div class="n"><b>{a['wpm']:.0f}</b><span>Words per minute · {pace}</span></div>
-<div class="n"><b>{len(a['pauses'])}</b><span>Pauses over 1 second</span></div>
-<div class="n"><b>{a['fillers']}</b><span>um / uh</span></div></div>
-<h2>Low-confidence words</h2><p class="sub">The system was less sure about these words. Listen to them again. Names can be wrong. This is not a pronunciation score.</p><ul>{low}</ul>
-<h2>Longest pauses</h2><ul>{pauses}</ul>
-<h2>Transcript</h2><div class="t">{html.escape(a['text'])}</div>
-<p class="sub" style="margin-top:18px">Pace guide: below 100 words per minute is slow; 100 to 160 is steady; above 160 is fast.</p>
+<section class="pace"><p class="wpm"><b>{wpm:.0f}</b>Words per minute</p><p class="verdict">{pace}</p>
+<div role="img" aria-label="Pace scale: {wpm:.0f} words per minute is in the {zone} zone"><div class="zones"><i{' class="on"' if zone == "slow" else ''}></i><i{' class="on"' if zone == "steady" else ''}></i><i{' class="on"' if zone == "fast" else ''}></i><span class="mk" style="left:{mark:.1f}%"></span></div>
+<div class="ticks" aria-hidden="true"><span class="z" style="left:0">slow</span><span style="left:25%">100</span><span style="left:43.75%">steady</span><span style="left:62.5%">160</span><span style="left:81.25%">fast</span></div></div>
+<p class="sub">Pace guide: below 100 words per minute is slow; 100 to 160 is steady; above 160 is fast.</p></section>
+<dl class="nums"><div><dt>First word to last word</dt><dd>{a['span']:.0f} s</dd></div>
+<div><dt>English words</dt><dd>{a['words']}</dd></div>
+<div><dt>Pauses over 1 second</dt><dd>{len(a['pauses'])}</dd></div>
+<div><dt>um / uh</dt><dd>{a['fillers']}</dd></div></dl>
+<h2>Low-confidence words</h2><p class="sub">The system was less sure about these words. Listen to them again. Names can be wrong. This is not a pronunciation score.</p>{low}
+<h2>Longest pauses</h2>{pauses}
+<h2>Transcript</h2><div class="t">{text}</div>
 </main></body></html>"""
 
 
