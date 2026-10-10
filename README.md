@@ -113,3 +113,5 @@ sample.wav: 11 seconds, 40 words, 209 words/min, 0 long pauses, 1 fillers, 0 low
 Copyright (c) 2026 Ninon.
 This app uses GPL-3.0-only. Read [LICENSE](LICENSE).
 Pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md).
+
+If this was useful to you, a star helps other people find it.
