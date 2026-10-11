@@ -24,6 +24,11 @@ struct SpeakFeedback {
                 try await req.downloadAndInstall()
             }
             let file = try AVAudioFile(forReading: URL(fileURLWithPath: args[1]))
+            // Analyzing a file with no frames never finishes; refuse it up front.
+            if file.length == 0 {
+                print("ERROR: no audio frames in \(args[1])")
+                exit(1)
+            }
             let collector = Task { () -> [String] in
                 var lines: [String] = []
                 for try await r in transcriber.results {

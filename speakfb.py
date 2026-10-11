@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Ninon
 """Turn a recording into a local speech report and a progress row."""
 import argparse
-import csv, datetime, html, os, re, subprocess, sys, tempfile
+import csv, datetime, html, os, re, subprocess, sys, tempfile, wave
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.environ.get("SPEAKFB_ROOT") or os.path.expanduser("~/SpeakFB")
@@ -23,6 +23,10 @@ def words_of(path, locale="en-US"):
     with tempfile.TemporaryDirectory() as tmp:
         wav = os.path.join(tmp, "a.wav")
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000", wav], check=True)
+        with wave.open(wav) as w:
+            # The Swift tool never finishes on a file with no frames.
+            if w.getnframes() == 0:
+                sys.exit(f"ERROR: no audio frames in {path}")
         out = subprocess.run([TOOL, wav, "--locale", locale], capture_output=True, text=True, check=True).stdout
     rows = []
     for line in out.splitlines():

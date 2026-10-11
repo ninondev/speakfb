@@ -37,6 +37,38 @@ if ! nice -n 10 python3 -c 'import sys, wave; f = wave.open(sys.argv[1]); assert
 fi
 echo "PASS: audio conversion"
 
+if nice -n 10 ffmpeg -v error -y -f lavfi -i anullsrc=r=16000:cl=mono -t 0 "$tmp/empty.wav"; then
+    if nice -n 10 python3 - "$tmp" <<'EMPTY'
+import os, subprocess, sys
+from pathlib import Path
+
+tmp = Path(sys.argv[1])
+env = dict(os.environ, SPEAKFB_ROOT=str(tmp / "data-empty"), SPEAKFB_NO_OPEN="1", TMPDIR=str(tmp))
+try:
+    result = subprocess.run(
+        [sys.executable, "speakfb.py", "--locale", "en-US", str(tmp / "empty.wav")],
+        env=env, capture_output=True, text=True, timeout=60,
+    )
+except subprocess.TimeoutExpired:
+    print("FAIL: empty audio hung the pipeline instead of failing")
+    sys.exit(1)
+output = (result.stdout + result.stderr).strip()
+if result.returncode == 0 or "no audio frames" not in output:
+    print("FAIL: empty audio must fail with a clear error, rc=" + str(result.returncode))
+    print(output[:300])
+    sys.exit(1)
+print("PASS: empty audio is refused with a clear error")
+EMPTY
+    then :; else
+        echo "Results: 2 passed, 1 failed, 2 skipped"
+        exit 1
+    fi
+else
+    echo "FAIL: could not create an empty sample"
+    echo "Results: 2 passed, 1 failed, 2 skipped"
+    exit 1
+fi
+
 nice -n 10 python3 - "$tmp" <<'PY'
 import csv
 import os
@@ -56,7 +88,7 @@ except subprocess.TimeoutExpired as error:
     output = (error.stdout or b"") + (error.stderr or b"")
     (tmp / "pipeline.log").write_bytes(output)
     print("FAIL: pipeline timed out after 180 seconds; see pipeline.log")
-    print("Results: 2 passed, 1 failed, 1 skipped")
+    print("Results: 3 passed, 1 failed, 1 skipped")
     sys.exit(1)
 
 output = result.stdout + result.stderr
@@ -65,7 +97,7 @@ print(output, end="")
 if result.returncode:
     print("FAIL: transcription; see pipeline.log")
     print("The system may need a speech model download. Check the error before retrying.")
-    print("Results: 2 passed, 1 failed, 1 skipped")
+    print("Results: 3 passed, 1 failed, 1 skipped")
     sys.exit(1)
 
 reports = list((root / "reports").glob("*.html"))
@@ -77,8 +109,8 @@ if (root / "progress.tsv").exists():
         rows = list(csv.reader(file, delimiter="\t"))
 progress_ok = len(rows) == 2 and len(rows[1]) == 8 and rows[1][1] == "sample.wav"
 print(("PASS" if progress_ok else "FAIL") + ": one progress row")
-passed = 2 + int(report_ok) + int(progress_ok)
-print(f"Results: {passed} passed, {4 - passed} failed, 0 skipped")
+passed = 3 + int(report_ok) + int(progress_ok)
+print(f"Results: {passed} passed, {5 - passed} failed, 0 skipped")
 if progress_ok:
     print("Synthetic sample: " + ", ".join(f"{key}={value}" for key, value in zip(rows[0][2:], rows[1][2:])))
 sys.exit(0 if report_ok and progress_ok else 1)
