@@ -19,26 +19,26 @@ fi
 
 tmp=$(mktemp -d "${SPEAKFB_TEST_TMP:-${TMPDIR:-/tmp}}/speakfb-smoke.XXXXXX")
 echo "Test files: $tmp"
-if ! nice -n 10 say -v Samantha -o "$tmp/sample.aiff" "Today I am testing a small speech tool. I will speak about my morning walk, um, and the book I read after breakfast. The air was cool and the street was quiet. I stopped near a tree before I went home."; then
+if ! say -v Samantha -o "$tmp/sample.aiff" "Today I am testing a small speech tool. I will speak about my morning walk, um, and the book I read after breakfast. The air was cool and the street was quiet. I stopped near a tree before I went home."; then
     echo "FAIL: synthetic speech"
     echo "Results: 0 passed, 1 failed, 3 skipped"
     exit 1
 fi
 echo "PASS: say command"
-if ! nice -n 10 ffmpeg -v error -y -i "$tmp/sample.aiff" -ac 1 -ar 16000 "$tmp/sample.wav"; then
+if ! ffmpeg -v error -y -i "$tmp/sample.aiff" -ac 1 -ar 16000 "$tmp/sample.wav"; then
     echo "FAIL: audio conversion"
     echo "Results: 1 passed, 1 failed, 2 skipped"
     exit 1
 fi
-if ! nice -n 10 python3 -c 'import sys, wave; f = wave.open(sys.argv[1]); assert f.getnframes() > 0, "No audio frames in sample"' "$tmp/sample.wav"; then
+if ! python3 -c 'import sys, wave; f = wave.open(sys.argv[1]); assert f.getnframes() > 0, "No audio frames in sample"' "$tmp/sample.wav"; then
     echo "FAIL: sample has no usable audio"
     echo "Results: 1 passed, 1 failed, 2 skipped"
     exit 1
 fi
 echo "PASS: audio conversion"
 
-if nice -n 10 ffmpeg -v error -y -f lavfi -i anullsrc=r=16000:cl=mono -t 0 "$tmp/empty.wav"; then
-    if nice -n 10 python3 - "$tmp" <<'EMPTY'
+if ffmpeg -v error -y -f lavfi -i anullsrc=r=16000:cl=mono -t 0 "$tmp/empty.wav"; then
+    if python3 - "$tmp" <<'EMPTY'
 import os, subprocess, sys
 from pathlib import Path
 
@@ -69,7 +69,7 @@ else
     exit 1
 fi
 
-nice -n 10 python3 - "$tmp" <<'PY'
+python3 - "$tmp" <<'PY'
 import csv
 import os
 from pathlib import Path

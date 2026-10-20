@@ -2,7 +2,7 @@
 
 SpeakFB turns an English recording into a report on your speaking pace, your long pauses and your fillers such as `um`. It is a small command-line tool for macOS 26 or later on Apple silicon. Transcription runs on your Mac, and the tool does not upload recordings.
 
-It does not score pronunciation. The report below is real output for an 11-second sample made with the macOS `say` voice.
+It does not score pronunciation. The report below comes from an 11-second sample made with the macOS `say` voice.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/report-dark.png">
@@ -37,7 +37,6 @@ make
 ```
 
 If the developer tools and ffmpeg are already installed, run only `make`.
-The build uses `swiftc -parse-as-library -O` and runs with `nice -n 10`.
 To choose a writable module cache:
 
 ```sh
@@ -113,5 +112,3 @@ sample.wav: 11 seconds, 40 words, 209 words/min, 0 long pauses, 1 fillers, 0 low
 Copyright (c) 2026 Ninon.
 This app uses GPL-3.0-only. Read [LICENSE](LICENSE).
 Pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md).
-
-If this was useful to you, a star helps other people find it.
