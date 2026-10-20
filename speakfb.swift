@@ -6,13 +6,17 @@ import Foundation
 import Speech
 import AVFoundation
 
+func fail(_ message: String, code: Int32) -> Never {
+    FileHandle.standardError.write(Data((message + "\n").utf8))
+    exit(code)
+}
+
 @main
 struct SpeakFeedback {
     static func main() async {
         let args = CommandLine.arguments
         guard args.count == 2 || (args.count == 4 && args[2] == "--locale") else {
-            print("usage: speakfb <audio.wav> [--locale en-US]")
-            return
+            fail("usage: speakfb <audio.wav> [--locale en-US]", code: 2)
         }
         let locale = args.count == 4 ? args[3] : "en-US"
         do {
@@ -26,8 +30,7 @@ struct SpeakFeedback {
             let file = try AVAudioFile(forReading: URL(fileURLWithPath: args[1]))
             // Analyzing a file with no frames never finishes; refuse it up front.
             if file.length == 0 {
-                print("ERROR: no audio frames in \(args[1])")
-                exit(1)
+                fail("ERROR: no audio frames in \(args[1])", code: 1)
             }
             let collector = Task { () -> [String] in
                 var lines: [String] = []
@@ -52,7 +55,7 @@ struct SpeakFeedback {
             }
             for l in try await collector.value { print(l) }
         } catch {
-            print("ERROR:", error)
+            fail("ERROR: \(error)", code: 1)
         }
     }
 }

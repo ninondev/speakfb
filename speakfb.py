@@ -27,14 +27,14 @@ def words_of(path, locale="en-US"):
             # The Swift tool never finishes on a file with no frames.
             if w.getnframes() == 0:
                 sys.exit(f"ERROR: no audio frames in {path}")
-        out = subprocess.run([TOOL, wav, "--locale", locale], capture_output=True, text=True, check=True).stdout
+        r = subprocess.run([TOOL, wav, "--locale", locale], capture_output=True, text=True)
+        if r.returncode:
+            sys.exit(r.stderr.strip() or f"ERROR: transcription failed with exit code {r.returncode}")
     rows = []
-    for line in out.splitlines():
+    for line in r.stdout.splitlines():
         p = line.split("\t")
         if len(p) == 4:
             rows.append((float(p[0]), float(p[1]), float(p[2]), p[3]))
-        elif line.startswith("ERROR"):
-            raise RuntimeError(line)
     return rows
 
 
@@ -109,7 +109,7 @@ mark{{background:var(--soft);color:var(--ink);border-radius:3px;padding:0 3px}}
 <dl class="nums"><div><dt>First word to last word</dt><dd>{a['span']:.0f} s</dd></div>
 <div><dt>English words</dt><dd>{a['words']}</dd></div>
 <div><dt>Pauses over 1 second</dt><dd>{len(a['pauses'])}</dd></div>
-<div><dt>um / uh</dt><dd>{a['fillers']}</dd></div></dl>
+<div><dt>fillers</dt><dd>{a['fillers']}</dd></div></dl>
 <h2>Low-confidence words</h2><p class="sub">The system was less sure about these words. Listen to them again. Names can be wrong. This is not a pronunciation score.</p>{low}
 <h2>Longest pauses</h2>{pauses}
 <h2>Transcript</h2><div class="t">{text}</div>
